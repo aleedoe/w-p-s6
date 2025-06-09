@@ -22,3 +22,17 @@ class Product(db.Model):
     
     def __repr__(self):
         return f'<Product {self.name}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'category': self.category,
+            'brand': self.brand,
+            'model': self.model,
+            'price': self.price,
+            'image_url': self.image_url,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }

@@ -20,3 +20,20 @@ class ShippingInfo(db.Model):
     
     def __repr__(self):
         return f'<ShippingInfo Order {self.order_id}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'order_id': self.order_id,
+            'reseller_id': self.reseller_id,
+            'shipping_method': self.shipping_method,
+            'tracking_number': self.tracking_number,
+            'shipping_date': self.shipping_date.isoformat() if self.shipping_date else None,
+            'estimated_delivery': self.estimated_delivery.isoformat() if self.estimated_delivery else None,
+            'actual_delivery': self.actual_delivery.isoformat() if self.actual_delivery else None,
+            'status': self.status,
+            'carrier': self.carrier,
+            'notes': self.notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }

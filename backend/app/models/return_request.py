@@ -18,3 +18,18 @@ class ReturnRequest(db.Model):
     
     def __repr__(self):
         return f'<ReturnRequest {self.id} by Reseller {self.reseller_id}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'reseller_id': self.reseller_id,
+            'product_id': self.product_id,
+            'order_id': self.order_id,
+            'quantity': self.quantity,
+            'reason': self.reason,
+            'status': self.status,
+            'request_date': self.request_date.isoformat() if self.request_date else None,
+            'processed_date': self.processed_date.isoformat() if self.processed_date else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }

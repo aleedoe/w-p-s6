@@ -20,6 +20,23 @@ class OrderRequest(db.Model):
     def __repr__(self):
         return f'<OrderRequest {self.id} by Reseller {self.reseller_id}>'
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'reseller_id': self.reseller_id,
+            'order_date': self.order_date.isoformat() if self.order_date else None,
+            'status': self.status,
+            'total_amount': self.total_amount,
+            'notes': self.notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'order_details': [detail.to_dict() for detail in self.order_details],
+            'shipping': self.shipping.to_dict() if self.shipping else None
+        }
+
+
+
+
 class OrderDetail(db.Model):
     __tablename__ = 'order_details'
     
@@ -33,3 +50,14 @@ class OrderDetail(db.Model):
     
     def __repr__(self):
         return f'<OrderDetail Order {self.order_id} Product {self.product_id}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'order_id': self.order_id,
+            'product_id': self.product_id,
+            'quantity': self.quantity,
+            'unit_price': self.unit_price,
+            'subtotal': self.subtotal,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }

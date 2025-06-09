@@ -11,3 +11,12 @@ class ResellerStock(db.Model):
     
     def __repr__(self):
         return f'<ResellerStock Reseller {self.reseller_id} Product {self.product_id}: {self.quantity}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'reseller_id': self.reseller_id,
+            'product_id': self.product_id,
+            'quantity': self.quantity,
+            'last_updated': self.last_updated.isoformat() if self.last_updated else None
+        }
