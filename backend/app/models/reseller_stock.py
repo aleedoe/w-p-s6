@@ -1,4 +1,4 @@
-from .. import db
+from . import db
 
 class ResellerStock(db.Model):
     __tablename__ = 'reseller_stocks'

@@ -4,9 +4,9 @@ from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_socketio import SocketIO
 from config import config
+from app.models import *
 from flask_cors import CORS
 
-db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
 socketio = SocketIO(cors_allowed_origins=[
@@ -30,7 +30,6 @@ def create_app(config_name='development'):
     })
     
     # Initialize extensions
-    db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
     # Inisialisasi SocketIO dengan CORS
@@ -49,5 +48,7 @@ def create_app(config_name='development'):
     # Import socket events
     from .controllers.socket_events import register_socket_events
     register_socket_events(socketio)
+    
+    db.init_app(app)
     
     return app
