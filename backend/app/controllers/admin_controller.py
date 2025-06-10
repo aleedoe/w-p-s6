@@ -105,9 +105,16 @@ def product_management(product_id=None):
     
     elif request.method == 'DELETE':
         product = Product.query.get_or_404(product_id)
+
+        # Cek apakah produk digunakan di order_details
+        order_refs = db.session.query(OrderDetail).filter_by(product_id=product_id).first()
+        if order_refs:
+            return jsonify({'message': 'Cannot delete product. It is referenced in order details.'}), 400
+
         db.session.delete(product)
         db.session.commit()
         return jsonify({'message': 'Product deleted'}), 200
+
 
 @jwt_required()
 def order_management(order_id=None):

@@ -15,10 +15,10 @@ class Product(db.Model):
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
     
     # Relationships
-    stocks = db.relationship('Stock', backref='product', lazy=True)
-    order_details = db.relationship('OrderDetail', backref='product', lazy=True)
-    reseller_stocks = db.relationship('ResellerStock', backref='product', lazy=True)
-    return_requests = db.relationship('ReturnRequest', backref='product', lazy=True)
+    stocks = db.relationship('Stock', backref='product', cascade='all, delete-orphan', lazy=True)
+    order_details = db.relationship('OrderDetail', backref='product', cascade='all, delete-orphan', lazy=True)
+    reseller_stocks = db.relationship('ResellerStock', backref='product', cascade='all, delete-orphan', lazy=True)
+    return_requests = db.relationship('ReturnRequest', backref='product', cascade='all, delete-orphan', lazy=True)
     
     def __repr__(self):
         return f'<Product {self.name}>'
