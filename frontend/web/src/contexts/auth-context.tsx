@@ -22,13 +22,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(false);
 
   React.useEffect(() => {
-    // Check if user is already logged in
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
 
-    if (token && userData) {
-      setUser(JSON.parse(userData));
+    if (token) {
       setIsAuthenticated(true);
+      if (userData) setUser(JSON.parse(userData));
     }
   }, []);
 
@@ -38,12 +37,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       const response = await loginAdmin(email, password);
-      const { token, user } = response.data;
+      const accessToken = response.data.access_token;
 
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("token", accessToken);
 
-      setUser(user);
+      // Optional: Decode token to get user data (if JWT contains user info)
+      const payload = JSON.parse(atob(accessToken.split(".")[1]));
+      const userData = {
+        id: payload.sub,
+        role: payload.role,
+        // Add other fields if needed
+      };
+
+      localStorage.setItem("user", JSON.stringify(userData));
+      setUser(userData);
       setIsAuthenticated(true);
     } catch (err: any) {
       setError(
