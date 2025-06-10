@@ -4,6 +4,7 @@ from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_socketio import SocketIO
 from config import config
+from flask_cors import CORS
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -13,6 +14,15 @@ socketio = SocketIO()
 def create_app(config_name='development'):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
+    
+    # Enable CORS
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": ["http://localhost:5173", "http://127.0.0.1:5173"],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"]
+        }
+    })
     
     # Initialize extensions
     db.init_app(app)
