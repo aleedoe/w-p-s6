@@ -6,13 +6,13 @@ from datetime import datetime
 
 def admin_login():
     data = request.get_json()
-    admin = Admin.query.filter_by(username=data.get('username')).first()
+    admin = Admin.query.filter_by(email=data.get('email')).first()
     
     if admin and admin.check_password(data.get('password')):
         access_token = create_access_token(identity=str(admin.id), additional_claims={'role': "admin"})
         return jsonify(access_token=access_token), 200
     
-    return jsonify({"msg": "Bad username or password"}), 401
+    return jsonify({"msg": "Bad email or password"}), 401
 
 @jwt_required()
 def product_management(product_id=None):
