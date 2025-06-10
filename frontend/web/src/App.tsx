@@ -5,6 +5,11 @@ import { useAuth } from "./contexts/auth-context";
 import LoginPage from "./pages/login";
 import DashboardLayout from "./layouts/dashboard-layout";
 import Dashboard from "./pages/dashboard";
+import Products from "./pages/products";
+// import Orders from "./pages/orders";
+// import Shipping from "./pages/shipping";
+// import Returns from "./pages/returns";
+// import NotFound from "./pages/not-found";
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
@@ -22,7 +27,7 @@ function App() {
       {/* Halaman Login */}
       <Route element={<LoginPage />} path="/login" />
 
-      {/* Dashboard dibungkus PrivateRoute */}
+      {/* Halaman Dashboard */}
       <Route
         element={
           <PrivateRoute>
@@ -32,11 +37,51 @@ function App() {
         path="/admin/dashboard"
       />
 
-      {/* Redirect root ke dashboard */}
-      <Route element={<Navigate replace to="/admin/dashboard" />} path="/" />
+      {/* Halaman Products */}
+      <Route
+        element={
+          <PrivateRoute>
+            <Products />
+          </PrivateRoute>
+        }
+        path="/admin/products"
+      />
 
-      {/* Jika ingin menambahkan NotFound di masa depan */}
-      {/* <Route path="*" element={<NotFound />} /> */}
+      {/* Halaman Orders */}
+      {/* <Route
+        element={
+          <PrivateRoute>
+            <Orders />
+          </PrivateRoute>
+        }
+        path="/admin/orders"
+      /> */}
+
+      {/* Halaman Shipping */}
+      {/* <Route
+        element={
+          <PrivateRoute>
+            <Shipping />
+          </PrivateRoute>
+        }
+        path="/admin/shipping"
+      /> */}
+
+      {/* Halaman Returns */}
+      {/* <Route
+        element={
+          <PrivateRoute>
+            <Returns />
+          </PrivateRoute>
+        }
+        path="/admin/returns"
+      /> */}
+
+      {/* Redirect root ke dashboard */}
+      <Route element={<Navigate replace to="/admin/products" />} path="/" />
+
+      {/* Halaman NotFound untuk semua path tak dikenal */}
+      {/* <Route element={<NotFound />} path="*" /> */}
     </Routes>
   );
 }

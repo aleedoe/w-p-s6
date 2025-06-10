@@ -21,7 +21,7 @@ const LoginPage: React.FC = () => {
     if (isAuthenticated) {
       const from =
         (location.state as { from?: Location })?.from?.pathname ||
-        "/admin/dashboard";
+        "/admin/products";
 
       navigate(from, { replace: true });
     }
@@ -34,7 +34,7 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     try {
       await login(email, password);
-      navigate("/admin/dashboard");
+      navigate("/admin/products");
     } catch (err) {
       // Error is handled in auth context
       // eslint-disable-next-line no-console
