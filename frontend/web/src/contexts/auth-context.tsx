@@ -9,6 +9,7 @@ interface AuthContextType {
   logout: () => void;
   loading: boolean;
   error: string | null;
+  initializing: boolean;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
@@ -20,6 +21,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(false);
+  const [initializing, setInitializing] = React.useState(true);
 
   React.useEffect(() => {
     const token = localStorage.getItem("token");
@@ -29,6 +31,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsAuthenticated(true);
       if (userData) setUser(JSON.parse(userData));
     }
+
+    setInitializing(false); // selesai inisialisasi
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -76,6 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     logout,
     loading,
     error,
+    initializing,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

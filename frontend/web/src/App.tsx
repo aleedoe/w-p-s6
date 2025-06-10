@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 import { useAuth } from "./contexts/auth-context";
 import LoginPage from "./pages/login";
@@ -12,13 +12,18 @@ import Products from "./pages/products";
 // import NotFound from "./pages/not-found";
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, initializing } = useAuth();
+  const location = useLocation();
 
-  return isAuthenticated ? (
-    <DashboardLayout>{children}</DashboardLayout>
-  ) : (
-    <Navigate replace to="/login" />
-  );
+  if (initializing) {
+    return <div>Loading...</div>; // bisa diganti dengan spinner
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate replace state={{ from: location }} to="/login" />;
+  }
+
+  return <DashboardLayout>{children}</DashboardLayout>;
 };
 
 function App() {

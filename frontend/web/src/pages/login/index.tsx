@@ -12,20 +12,9 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [isPasswordVisible, setIsPasswordVisible] = React.useState(false);
-  const { login, loading, error, isAuthenticated } = useAuth();
+  const { login, loading, error } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
-  // Redirect if already authenticated
-  React.useEffect(() => {
-    if (isAuthenticated) {
-      const from =
-        (location.state as { from?: Location })?.from?.pathname ||
-        "/admin/products";
-
-      navigate(from, { replace: true });
-    }
-  }, [isAuthenticated, location, navigate]);
 
   const togglePasswordVisibility = () =>
     setIsPasswordVisible(!isPasswordVisible);
@@ -34,9 +23,13 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     try {
       await login(email, password);
-      navigate("/admin/products");
+      // setelah login berhasil, redirect ke tujuan awal (kalau ada) atau ke /admin/products
+      const from =
+        (location.state as { from?: Location })?.from?.pathname ||
+        "/admin/products";
+
+      navigate(from, { replace: true });
     } catch (err) {
-      // Error is handled in auth context
       // eslint-disable-next-line no-console
       console.error("Login failed:", err);
     }
