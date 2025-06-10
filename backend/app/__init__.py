@@ -9,7 +9,12 @@ from flask_cors import CORS
 db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
-socketio = SocketIO()
+socketio = SocketIO(cors_allowed_origins=[
+    "http://localhost:5173", 
+    "http://127.0.0.1:5173"],
+    engineio_logger=True,  # Untuk debugging
+    logger=True
+    )
 
 def create_app(config_name='development'):
     app = Flask(__name__)
@@ -28,7 +33,10 @@ def create_app(config_name='development'):
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
-    socketio.init_app(app, message_queue=app.config['SOCKETIO_MESSAGE_QUEUE'])
+    # Inisialisasi SocketIO dengan CORS
+    socketio.init_app(app, 
+                    cors_allowed_origins=["http://localhost:5173"],
+                    message_queue=app.config['SOCKETIO_MESSAGE_QUEUE'])
     
     # Register blueprints
     from .routes import admin_bp, reseller_bp
