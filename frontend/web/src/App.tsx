@@ -7,6 +7,7 @@ import DashboardLayout from "./layouts/dashboard-layout";
 import Dashboard from "./pages/dashboard";
 import Products from "./pages/products";
 import Orders from "./pages/orders";
+import Shipping from "./pages/shipping";
 // import Orders from "./pages/orders";
 // import Shipping from "./pages/shipping";
 // import Returns from "./pages/returns";
@@ -64,14 +65,14 @@ function App() {
       />
 
       {/* Halaman Shipping */}
-      {/* <Route
+      <Route
         element={
           <PrivateRoute>
             <Shipping />
           </PrivateRoute>
         }
         path="/admin/shipping"
-      /> */}
+      />
 
       {/* Halaman Returns */}
       {/* <Route

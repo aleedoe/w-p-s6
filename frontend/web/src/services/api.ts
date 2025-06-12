@@ -87,12 +87,16 @@ export const getShippings = (params?: any) => {
   return api.get("/admin/shipping", { params });
 };
 
-export const updateShippingStatus = (
-  id: string,
-  status: string,
-  trackingInfo?: any,
-) => {
-  return api.put(`/admin/shipping/${id}`, { status, trackingInfo });
+export const updateShippingStatus = (payload: {
+  shipping_id: number;
+  status: string;
+  tracking_number?: string;
+  carrier?: string;
+  notes?: string;
+  shipping_method?: string;
+  estimated_delivery?: string;
+}) => {
+  return api.put("/admin/shipping", payload);
 };
 
 // Returns API

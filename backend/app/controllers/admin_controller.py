@@ -1,3 +1,4 @@
+from operator import or_
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token, get_jwt
 from ..models import Admin, Product, Stock, OrderRequest, OrderDetail, ReturnRequest, ShippingInfo, db, ResellerStock
@@ -205,49 +206,81 @@ def shipping_management():
         return jsonify({'message': 'Unauthorized'}), 403
     
     if request.method == 'GET':
-        status = request.args.get('status', 'preparing')
-        shippings = ShippingInfo.query.filter_by(status=status).all()
-        return jsonify([s.to_dict() for s in shippings])
+        page = request.args.get('page', 1, type=int)
+        limit = request.args.get('limit', 10, type=int)
+        search = request.args.get('search', '')
+        status = request.args.get('status', 'all')
+
+        query = ShippingInfo.query
+        
+        if status != 'all':
+            query = query.filter_by(status=status)
+            
+        if search:
+            query = query.filter(
+                or_(
+                    ShippingInfo.tracking_number.ilike(f'%{search}%'),
+                    ShippingInfo.order_id.ilike(f'%{search}%'),
+                    ShippingInfo.carrier.ilike(f'%{search}%')
+                )
+            )
+            
+        paginated = query.paginate(page=page, per_page=limit, error_out=False)
+        
+        return jsonify({
+            'shipments': [s.to_dict() for s in paginated.items],
+            'total': paginated.total,
+            'page': paginated.page,
+            'per_page': paginated.per_page
+        })
     
     elif request.method == 'PUT':
         data = request.get_json()
-        shipping_id = data.get('shipping_id')
-        shipping = ShippingInfo.query.get_or_404(shipping_id)
         
+        # Validasi required fields
+        if not data.get('shipping_id'):
+            return jsonify({'message': 'Shipping ID is required'}), 400
+        if not data.get('status'):
+            return jsonify({'message': 'Status is required'}), 400
+
+        shipping = ShippingInfo.query.get_or_404(data['shipping_id'])
+        
+        # Update semua field yang ada di request
         if 'status' in data:
             shipping.status = data['status']
             
-            # Update order status if shipping is delivered
+            # Handle khusus status delivered
             if data['status'] == 'delivered':
-                shipping.order.status = 'delivered'
                 shipping.actual_delivery = datetime.utcnow()
-                
-                # Update reseller stock
-                order_details = OrderDetail.query.filter_by(order_id=shipping.order_id).all()
-                for detail in order_details:
-                    reseller_stock = ResellerStock.query.filter_by(
-                        reseller_id=shipping.reseller_id,
-                        product_id=detail.product_id
-                    ).first()
-                    
-                    if reseller_stock:
-                        reseller_stock.quantity += detail.quantity
-                    else:
-                        reseller_stock = ResellerStock(
-                            reseller_id=shipping.reseller_id,
-                            product_id=detail.product_id,
-                            quantity=detail.quantity
-                        )
-                        db.session.add(reseller_stock)
-                
-                # Emit socket event
-                socketio.emit('shipping_update', {
-                    'order_id': shipping.order_id,
-                    'status': 'delivered',
-                    'reseller_id': shipping.reseller_id
-                }, namespace='/reseller')
+                if shipping.order:
+                    shipping.order.status = 'delivered'
         
+        # Update field shipping info
+        if 'tracking_number' in data:
+            shipping.tracking_number = data['tracking_number']
+        if 'carrier' in data:
+            shipping.carrier = data['carrier']
+        if 'notes' in data:
+            shipping.notes = data['notes']
+        if 'shipping_method' in data:
+            shipping.shipping_method = data['shipping_method']
+        if 'estimated_delivery' in data:
+            try:
+                shipping.estimated_delivery = datetime.fromisoformat(data['estimated_delivery'])
+            except (ValueError, TypeError):
+                return jsonify({'message': 'Invalid estimated_delivery format'}), 400
+
         db.session.commit()
+        
+        # Emit socket event
+        socketio.emit('shipping_update', {
+            'shipping_id': shipping.id,
+            'order_id': shipping.order_id,
+            'status': shipping.status,
+            'reseller_id': shipping.reseller_id,
+            'updated_at': shipping.updated_at.isoformat()
+        }, namespace='/admin')
+        
         return jsonify(shipping.to_dict())
 
 @jwt_required()
