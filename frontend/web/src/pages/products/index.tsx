@@ -284,7 +284,6 @@ const Products: React.FC = () => {
             <TableColumn>CATEGORY</TableColumn>
             <TableColumn>PRICE</TableColumn>
             <TableColumn>STOCK</TableColumn>
-            <TableColumn>STATUS</TableColumn>
             <TableColumn>ACTIONS</TableColumn>
           </TableHeader>
           <TableBody
@@ -301,7 +300,8 @@ const Products: React.FC = () => {
                         <img
                           alt={product.name}
                           className="w-full h-full object-cover"
-                          src={product.image_url}
+                          // eslint-disable-next-line prettier/prettier
+                          src={"https://media.istockphoto.com/id/627795510/photo/example.jpg?s=612x612&w=0&k=20&c=lpUf5rjPVd6Kl_M6heqC8sUncR4FLmtsRzeYdTr5X_I="}
                         />
                       </div>
                     )}
@@ -317,15 +317,6 @@ const Products: React.FC = () => {
                     <span>{product.stock?.quantity || 0}</span>
                     {renderStockStatus(product.stock?.quantity || 0)}
                   </div>
-                </TableCell>
-                <TableCell>
-                  <Chip
-                    color={product.status === "active" ? "success" : "default"}
-                    size="sm"
-                    variant="flat"
-                  >
-                    {product.status === "active" ? "Active" : "Inactive"}
-                  </Chip>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">

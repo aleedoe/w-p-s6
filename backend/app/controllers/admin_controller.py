@@ -31,7 +31,6 @@ def product_management(product_id=None):
                 'stock': stock.to_dict() if stock else None
             })
         else:
-            # Ambil parameter query dari frontend
             page = request.args.get('page', default=1, type=int)
             limit = request.args.get('limit', default=10, type=int)
             search = request.args.get('search', type=str)
@@ -50,9 +49,15 @@ def product_management(product_id=None):
                             .all()
 
             return jsonify({
-                'products': [p.to_dict() for p in products],
+                'products': [
+                    {
+                        **p.to_dict(),
+                        'stock': p.stocks[0].to_dict() if p.stocks else None
+                    } for p in products
+                ],
                 'total': total
             })
+
 
     
     elif request.method == 'POST':
