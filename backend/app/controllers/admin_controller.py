@@ -77,9 +77,10 @@ def product_management(product_id=None):
         # Add stock
         stock = Stock(
             product_id=product.id,
-            quantity=data.get('quantity', 0),
+            quantity=data.get('stock', {}).get('quantity', 0),
             last_restocked=datetime.utcnow()
         )
+
         db.session.add(stock)
         db.session.commit()
         
@@ -96,17 +97,25 @@ def product_management(product_id=None):
         product.model = data.get('model', product.model)
         product.price = data.get('price', product.price)
         product.image_url = data.get('image_url', product.image_url)
-        
-        if 'quantity' in data:
+
+        # Sinkronisasi update stock
+        stock_data = data.get('stock')
+        if stock_data and isinstance(stock_data, dict):
             stock = Stock.query.filter_by(product_id=product_id).first()
             if stock:
-                stock.quantity = data['quantity']
+                stock.quantity = stock_data.get('quantity', stock.quantity)
+                stock.last_restocked = datetime.utcnow()
             else:
-                stock = Stock(product_id=product_id, quantity=data['quantity'])
+                stock = Stock(
+                    product_id=product_id,
+                    quantity=stock_data.get('quantity', 0),
+                    last_restocked=datetime.utcnow()
+                )
                 db.session.add(stock)
-        
+
         db.session.commit()
         return jsonify(product.to_dict())
+
     
     elif request.method == 'DELETE':
         product = Product.query.get_or_404(product_id)
@@ -116,9 +125,15 @@ def product_management(product_id=None):
         if order_refs:
             return jsonify({'message': 'Cannot delete product. It is referenced in order details.'}), 400
 
+        # Hapus stok terkait produk
+        stock = Stock.query.filter_by(product_id=product_id).first()
+        if stock:
+            db.session.delete(stock)
+
         db.session.delete(product)
         db.session.commit()
         return jsonify({'message': 'Product deleted'}), 200
+
 
 
 @jwt_required()
