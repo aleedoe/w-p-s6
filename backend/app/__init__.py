@@ -6,6 +6,8 @@ from flask_socketio import SocketIO
 from config import config
 from app.models import *
 from flask_cors import CORS
+from datetime import timedelta
+
 
 migrate = Migrate()
 jwt = JWTManager()
@@ -18,6 +20,7 @@ socketio = SocketIO(cors_allowed_origins=[
 
 def create_app(config_name='development'):
     app = Flask(__name__)
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
     app.config.from_object(config[config_name])
     
     # Enable CORS
