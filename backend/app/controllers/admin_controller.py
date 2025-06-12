@@ -154,8 +154,30 @@ def order_management(order_id=None):
             })
         else:
             status = request.args.get('status', 'pending')
-            orders = OrderRequest.query.filter_by(status=status).all()
-            return jsonify([o.to_dict() for o in orders])
+            page = int(request.args.get('page', 1))
+            limit = int(request.args.get('limit', 10))
+            search = request.args.get('search', '')
+
+            query = OrderRequest.query
+
+            if status:
+                query = query.filter_by(status=status)
+
+            if search:
+                query = query.filter(OrderRequest.notes.ilike(f'%{search}%'))
+
+            total = query.count()
+            orders = query.offset((page - 1) * limit).limit(limit).all()
+
+            return jsonify({
+                'data': [o.to_dict() for o in orders],
+                'meta': {
+                    'total': total,
+                    'page': page,
+                    'limit': limit
+                }
+            })
+
     
     elif request.method == 'PUT':
         order = OrderRequest.query.get_or_404(order_id)

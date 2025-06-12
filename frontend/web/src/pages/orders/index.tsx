@@ -14,15 +14,19 @@ import {
 } from "@heroui/table";
 import { Pagination } from "@heroui/pagination";
 import { Spinner } from "@heroui/spinner";
-import { Dropdown, DropdownItem, DropdownTrigger } from "@heroui/dropdown";
+import {
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+} from "@heroui/dropdown";
 
 import { getOrders } from "../../services/api";
-
 import OrderDetailModal from "./order-detail-modal";
-
 import StatusBadge from "@/components/status-badge";
 
 interface Order {
+  items_count?: number;
   id: string;
   reseller_id: string;
   reseller_name: string;
@@ -61,10 +65,33 @@ const Orders: React.FC = () => {
       };
       const response = await getOrders(params);
 
-      setOrders(response.data.orders);
-      setTotalPages(Math.ceil(response.data.total / rowsPerPage));
+      // Perhatikan perubahan di sini - mengakses response.data.data
+      const apiData = response.data.data; // Array orders sebenarnya
+      const metaData = response.data.meta; // Metadata pagination
+
+      // Transform the API data
+      const transformedOrders = apiData.map((order: any) => ({
+        id: order.id.toString(),
+        reseller_id: order.reseller_id.toString(),
+        reseller_name: `Reseller ${order.reseller_id}`,
+        order_date: order.order_date,
+        total_amount: order.total_amount,
+        status: order.status,
+        items_count: order.order_details.reduce((sum: number, item: any) => sum + item.quantity, 0),
+        order_details: order.order_details.map((detail: any) => ({
+          product_id: detail.product_id.toString(),
+          quantity: detail.quantity,
+          unit_price: detail.unit_price,
+          subtotal: detail.subtotal
+        })),
+        shipping: order.shipping ? {
+          status: order.shipping.status
+        } : undefined
+      }));
+
+      setOrders(transformedOrders);
+      setTotalPages(Math.ceil(metaData.total / rowsPerPage));
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error("Error fetching orders:", err);
       setError("Failed to load orders. Please try again.");
     } finally {
@@ -91,100 +118,8 @@ const Orders: React.FC = () => {
     onClose();
   };
 
-  // Mock data for development
-  const mockOrders = [
-    {
-      id: "ORD-001",
-      reseller_id: "RS001",
-      reseller_name: "Tech Solutions Inc.",
-      order_date: "2023-06-15T10:30:00Z",
-      total_amount: 2499.97,
-      status: "pending",
-      order_details: [
-        {
-          product_id: "P001",
-          quantity: 3,
-          unit_price: 899.99,
-          subtotal: 2699.97,
-        },
-      ],
-      shipping: { status: "pending" },
-    },
-    {
-      id: "ORD-002",
-      reseller_id: "RS002",
-      reseller_name: "Gadget World",
-      order_date: "2023-06-14T14:20:00Z",
-      total_amount: 1899.5,
-      status: "approved",
-      order_details: [
-        {
-          product_id: "P002",
-          quantity: 5,
-          unit_price: 379.99,
-          subtotal: 1899.95,
-        },
-      ],
-      shipping: { status: "approved" },
-    },
-    {
-      id: "ORD-003",
-      reseller_id: "RS003",
-      reseller_name: "Digital Mart",
-      order_date: "2023-06-14T09:15:00Z",
-      total_amount: 3299.99,
-      status: "rejected",
-      order_details: [
-        {
-          product_id: "P003",
-          quantity: 2,
-          unit_price: 1649.99,
-          subtotal: 3299.98,
-        },
-      ],
-      shipping: { status: "rejected" },
-    },
-    {
-      id: "ORD-004",
-      reseller_id: "RS004",
-      reseller_name: "ElectroHub",
-      order_date: "2023-06-13T16:45:00Z",
-      total_amount: 899.95,
-      status: "pending",
-      order_details: [
-        {
-          product_id: "P004",
-          quantity: 4,
-          unit_price: 224.99,
-          subtotal: 999.96,
-        },
-      ],
-      shipping: { status: "pending" },
-    },
-    {
-      id: "ORD-005",
-      reseller_id: "RS005",
-      reseller_name: "Tech Solutions Inc.",
-      order_date: "2023-06-12T11:10:00Z",
-      total_amount: 5499.98,
-      status: "approved",
-      order_details: [
-        {
-          product_id: "P005",
-          quantity: 6,
-          unit_price: 924.99,
-          subtotal: 5549.98,
-        },
-      ],
-      shipping: { status: "approved" },
-    },
-  ];
-
-  const displayOrders = orders.length > 0 ? orders : mockOrders;
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-
     return new Intl.DateTimeFormat("en-US", {
       year: "numeric",
       month: "short",
@@ -231,13 +166,13 @@ const Orders: React.FC = () => {
 
         <div className="flex gap-2">
           <Chip color="warning" variant="flat">
-            Pending: 12
+            Pending: {orders.filter(o => o.status === 'pending').length}
           </Chip>
           <Chip color="success" variant="flat">
-            Approved: 24
+            Approved: {orders.filter(o => o.status === 'approved').length}
           </Chip>
           <Chip color="danger" variant="flat">
-            Rejected: 5
+            Rejected: {orders.filter(o => o.status === 'rejected').length}
           </Chip>
         </div>
       </div>
@@ -261,8 +196,7 @@ const Orders: React.FC = () => {
           }
           selectionMode="single"
           onRowAction={(key) => {
-            const order = displayOrders.find((o) => o.id === key);
-
+            const order = orders.find((o) => o.id === key);
             if (order) handleOrderClick(order);
           }}
         >
@@ -281,7 +215,7 @@ const Orders: React.FC = () => {
             isLoading={loading}
             loadingContent={<Spinner color="primary" />}
           >
-            {displayOrders.map((order) => (
+            {orders.map((order) => (
               <TableRow key={order.id}>
                 <TableCell>
                   <div className="font-medium">{order.id}</div>
@@ -290,7 +224,7 @@ const Orders: React.FC = () => {
                 <TableCell>{formatDate(order.order_date)}</TableCell>
                 <TableCell>${order.total_amount.toFixed(2)}</TableCell>
                 <TableCell>
-                  {order.order_details?.length || order.items_count || 0} items
+                  {order.items_count ?? 0} items
                 </TableCell>
                 <TableCell>
                   <StatusBadge status={order.status} />
@@ -320,7 +254,7 @@ const Orders: React.FC = () => {
                         </Button>
                       </DropdownTrigger>
                       <DropdownMenu aria-label="Order actions">
-                        {order.status === "pending" && (
+                        {order.status === "pending" ? (
                           <>
                             <DropdownItem
                               key="approve"
@@ -352,7 +286,7 @@ const Orders: React.FC = () => {
                               Reject Order
                             </DropdownItem>
                           </>
-                        )}
+                        ) : null}
                         <DropdownItem
                           key="print"
                           startContent={
@@ -371,7 +305,6 @@ const Orders: React.FC = () => {
         </Table>
       </div>
 
-      {/* Order Detail Modal */}
       <OrderDetailModal
         isOpen={isOpen}
         order={selectedOrder}
