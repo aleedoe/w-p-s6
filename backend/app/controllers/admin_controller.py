@@ -150,7 +150,6 @@ def order_management(order_id=None):
             details = OrderDetail.query.filter_by(order_id=order_id).all()
             return jsonify({
                 'order': order.to_dict(),
-                'details': [d.to_dict() for d in details]
             })
         else:
             status = request.args.get('status', 'pending')

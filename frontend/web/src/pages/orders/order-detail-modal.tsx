@@ -26,31 +26,39 @@ import { getOrder, updateOrderStatus } from "../../services/api";
 
 // types.ts
 export interface OrderDetail {
-  id: string;
-  product_id: string;
-  product_name: string;
+  id: number;
+  product_id: number;
   quantity: number;
   unit_price: number;
   subtotal: number;
+  created_at: string;
+}
+
+export interface Shipping {
+  id: number;
+  carrier: string;
+  tracking_number: string;
+  status: string;
+  shipping_method: string;
+  shipping_date: string;
+  estimated_delivery: string;
+  actual_delivery: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Order {
-  id: string;
-  reseller_id: string;
-  reseller_name: string;
+  id: number;
+  reseller_id: number;
   order_date: string;
   total_amount: number;
   status: string;
-  reseller_email?: string;
-  shipping_address?: string;
   notes?: string;
   order_details: OrderDetail[];
-  shipping?: {
-    id: string;
-    status: string;
-    tracking_number?: string;
-    carrier?: string;
-  };
+  shipping?: Shipping;
+  created_at: string;
+  updated_at: string;
 }
 
 interface OrderDetailModalProps {
@@ -75,7 +83,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 
   React.useEffect(() => {
     if (isOpen && order) {
-      fetchOrderDetails(order.id);
+      fetchOrderDetails(order.id.toString());
     } else {
       setOrderDetails(null);
       setNotes("");
@@ -87,10 +95,9 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
       setLoading(true);
       const response = await getOrder(orderId);
 
-      setOrderDetails(response.data);
-      setNotes(response.data.notes || "");
+      setOrderDetails(response.data.order);
+      setNotes(response.data.order.notes || "");
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error("Error fetching order details:", err);
       setError("Failed to load order details. Please try again.");
       setOrderDetails(order); // Fallback to basic order info
@@ -103,7 +110,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     if (!orderDetails) return;
     try {
       setStatusLoading(true);
-      await updateOrderStatus(orderDetails.id, status, notes);
+      await updateOrderStatus(orderDetails.id.toString(), status, notes);
       // Emit WebSocket event
       if (socket && socket.connected) {
         socket.emit("order_updated", {
@@ -114,7 +121,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
       }
       onStatusChange();
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error("Error updating order status:", err);
       setError("Failed to update order status. Please try again.");
     } finally {
@@ -122,45 +128,26 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-
-    return new Intl.DateTimeFormat("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "N/A";
+    try {
+      const date = new Date(dateString);
+      return isNaN(date.getTime())
+        ? "Invalid date"
+        : new Intl.DateTimeFormat("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }).format(date);
+    } catch (e) {
+      console.error("Error formatting date:", e);
+      return "Invalid date";
+    }
   };
 
-  // Mock data for development
-  const mockOrderItems = [
-    {
-      id: "1",
-      product_name: "Smartphone X",
-      quantity: 2,
-      unit_price: 899.99,
-      total_price: 1799.98,
-    },
-    {
-      id: "2",
-      product_name: "Wireless Earbuds",
-      quantity: 3,
-      unit_price: 129.99,
-      total_price: 389.97,
-    },
-    {
-      id: "3",
-      product_name: "Charging Cable",
-      quantity: 5,
-      unit_price: 19.99,
-      total_price: 99.95,
-    },
-  ];
-
   const displayOrder = orderDetails || order;
-  const displayItems = orderDetails?.items || mockOrderItems;
 
   if (!displayOrder) return null;
 
@@ -175,7 +162,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
         {(onClose) => (
           <>
             <ModalHeader className="flex flex-col gap-1">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-around">
                 <span>Order Details</span>
                 <StatusBadge status={displayOrder.status} />
               </div>
@@ -205,11 +192,15 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                           <span>{formatDate(displayOrder.order_date)}</span>
                         </div>
                         <div className="flex justify-between">
+                          <span className="text-default-500">Status:</span>
+                          <StatusBadge status={displayOrder.status} />
+                        </div>
+                        <div className="flex justify-between">
                           <span className="text-default-500">
                             Total Amount:
                           </span>
                           <span className="font-medium">
-                            ${displayOrder.total_amount.toFixed(2)}
+                            Rp{displayOrder.total_amount.toLocaleString('id-ID')}
                           </span>
                         </div>
                       </div>
@@ -221,21 +212,8 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                       </h3>
                       <div className="mt-2 space-y-2">
                         <div className="flex justify-between">
-                          <span className="text-default-500">Name:</span>
-                          <span>{displayOrder.reseller_name}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-default-500">Email:</span>
-                          <span>
-                            {displayOrder.reseller_email || "info@example.com"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-default-500">Address:</span>
-                          <span className="text-right">
-                            {displayOrder.shipping_address ||
-                              "123 Main St, City, Country"}
-                          </span>
+                          <span className="text-default-500">Reseller ID:</span>
+                          <span>{displayOrder.reseller_id}</span>
                         </div>
                       </div>
                     </div>
@@ -252,27 +230,22 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     className="mt-2"
                   >
                     <TableHeader>
-                      <TableColumn>PRODUCT</TableColumn>
+                      <TableColumn>PRODUCT ID</TableColumn>
                       <TableColumn>QTY</TableColumn>
                       <TableColumn>UNIT PRICE</TableColumn>
                       <TableColumn>SUBTOTAL</TableColumn>
                     </TableHeader>
                     <TableBody>
-                      {(displayOrder.order_details || displayItems).map(
-                        (item) => (
-                          <TableRow key={item.product_id || item.id}>
-                            <TableCell>{item.product_name}</TableCell>
-                            <TableCell>{item.quantity}</TableCell>
-                            <TableCell>${item.unit_price.toFixed(2)}</TableCell>
-                            <TableCell>
-                              $
-                              {item.subtotal
-                                ? item.subtotal.toFixed(2)
-                                : (item.unit_price * item.quantity).toFixed(2)}
-                            </TableCell>
-                          </TableRow>
-                        ),
-                      )}
+                      {displayOrder.order_details.map((item) => (
+                        <TableRow key={`${item.id}-${item.product_id}`}>
+                          <TableCell>{item.product_id}</TableCell>
+                          <TableCell>{item.quantity}</TableCell>
+                          <TableCell>Rp{item.unit_price.toLocaleString('id-ID')}</TableCell>
+                          <TableCell>
+                            Rp{item.subtotal.toLocaleString('id-ID')}
+                          </TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
 
@@ -288,22 +261,28 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                           <span className="text-default-500">Status:</span>
                           <StatusBadge status={displayOrder.shipping.status} />
                         </div>
-                        {displayOrder.shipping.tracking_number && (
-                          <div className="flex justify-between">
-                            <span className="text-default-500">
-                              Tracking Number:
-                            </span>
-                            <span className="font-mono">
-                              {displayOrder.shipping.tracking_number}
-                            </span>
-                          </div>
-                        )}
-                        {displayOrder.shipping.carrier && (
-                          <div className="flex justify-between">
-                            <span className="text-default-500">Carrier:</span>
-                            <span>{displayOrder.shipping.carrier}</span>
-                          </div>
-                        )}
+                        <div className="flex justify-between">
+                          <span className="text-default-500">Carrier:</span>
+                          <span>{displayOrder.shipping.carrier}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-default-500">Method:</span>
+                          <span>{displayOrder.shipping.shipping_method}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-default-500">Tracking Number:</span>
+                          <span className="font-mono">
+                            {displayOrder.shipping.tracking_number}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-default-500">Shipping Date:</span>
+                          <span>{formatDate(displayOrder.shipping.shipping_date)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-default-500">Estimated Delivery:</span>
+                          <span>{formatDate(displayOrder.shipping.estimated_delivery)}</span>
+                        </div>
                       </div>
                     </>
                   )}
@@ -312,17 +291,13 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     <div className="w-48">
                       <div className="flex justify-between py-1">
                         <span className="text-default-500">Subtotal:</span>
-                        <span>${displayOrder.total_amount.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between py-1">
-                        <span className="text-default-500">Tax:</span>
-                        <span>$0.00</span>
+                        <span>Rp{displayOrder.total_amount.toLocaleString('id-ID')}</span>
                       </div>
                       <Divider className="my-2" />
                       <div className="flex justify-between py-1">
                         <span className="font-semibold">Total:</span>
                         <span className="font-semibold">
-                          ${displayOrder.total_amount.toFixed(2)}
+                          Rp{displayOrder.total_amount.toLocaleString('id-ID')}
                         </span>
                       </div>
                     </div>

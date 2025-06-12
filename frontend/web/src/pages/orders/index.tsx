@@ -14,12 +14,6 @@ import {
 } from "@heroui/table";
 import { Pagination } from "@heroui/pagination";
 import { Spinner } from "@heroui/spinner";
-import {
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownTrigger,
-} from "@heroui/dropdown";
 
 import { getOrders } from "../../services/api";
 import OrderDetailModal from "./order-detail-modal";
@@ -247,56 +241,6 @@ const Orders: React.FC = () => {
                     >
                       View
                     </Button>
-                    <Dropdown>
-                      <DropdownTrigger>
-                        <Button isIconOnly size="sm" variant="light">
-                          <Icon icon="lucide:more-vertical" width={18} />
-                        </Button>
-                      </DropdownTrigger>
-                      <DropdownMenu aria-label="Order actions">
-                        {order.status === "pending" ? (
-                          <>
-                            <DropdownItem
-                              key="approve"
-                              description="Process this order"
-                              startContent={
-                                <Icon
-                                  className="text-success"
-                                  icon="lucide:check"
-                                  width={18}
-                                />
-                              }
-                              onPress={() => handleOrderClick(order)}
-                            >
-                              Approve Order
-                            </DropdownItem>
-                            <DropdownItem
-                              key="reject"
-                              className="text-danger"
-                              description="Decline this order"
-                              startContent={
-                                <Icon
-                                  className="text-danger"
-                                  icon="lucide:x"
-                                  width={18}
-                                />
-                              }
-                              onPress={() => handleOrderClick(order)}
-                            >
-                              Reject Order
-                            </DropdownItem>
-                          </>
-                        ) : null}
-                        <DropdownItem
-                          key="print"
-                          startContent={
-                            <Icon icon="lucide:printer" width={18} />
-                          }
-                        >
-                          Print Details
-                        </DropdownItem>
-                      </DropdownMenu>
-                    </Dropdown>
                   </div>
                 </TableCell>
               </TableRow>
