@@ -8,7 +8,6 @@ import {
 } from "@heroui/modal";
 import { Input, Textarea } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
-import { Switch } from "@heroui/switch";
 import { Button } from "@heroui/button";
 
 import { createProduct, updateProduct } from "../../services/api";
@@ -285,17 +284,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     handleInputChange("image_url", value)
                   }
                 />
-
-                <div className="flex items-center h-full">
-                  <Switch
-                    isSelected={formData.status === "active"}
-                    onValueChange={(value) =>
-                      handleInputChange("status", value ? "active" : "inactive")
-                    }
-                  >
-                    {formData.status === "active" ? "Active" : "Inactive"}
-                  </Switch>
-                </div>
               </div>
 
               <Textarea
