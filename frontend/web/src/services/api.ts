@@ -113,7 +113,12 @@ export const updateReturnStatus = (
   status: string,
   notes?: string,
 ) => {
-  return api.put(`/admin/returns/${id}`, { status, notes });
+  // Sesuaikan dengan endpoint backend yang menerima PUT /admin/returns
+  return api.put("/admin/returns", {
+    return_id: parseInt(id),
+    status,
+    notes,
+  });
 };
 
 // Dashboard API

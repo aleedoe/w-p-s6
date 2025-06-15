@@ -22,6 +22,7 @@ interface Return {
   processed_date?: string | null;
   created_at: string;
   updated_at: string;
+  action?: 'approve' | 'reject';
 }
 
 const Returns: React.FC = () => {
@@ -44,15 +45,11 @@ const Returns: React.FC = () => {
         search: searchQuery || undefined,
       };
       const response = await getReturns(params);
-      console.log(response);
-
-      // Fix: Access the nested data structure
-      setReturns(response.data.returns || []); // Fallback to empty array
-      setTotalPages(response.data.total_pages || 1); // Fallback to 1
+      setReturns(response.data.returns || []);
+      setTotalPages(response.data.total_pages || 1);
     } catch (err) {
       console.error('Error fetching returns:', err);
       setError('Failed to load returns. Please try again.');
-      // Set fallback values on error
       setReturns([]);
       setTotalPages(1);
     } finally {
@@ -66,7 +63,7 @@ const Returns: React.FC = () => {
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    setPage(1); // Reset to first page on search
+    setPage(1);
   };
 
   const handleReturnClick = (returnItem: Return) => {
@@ -100,16 +97,10 @@ const Returns: React.FC = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold">Return Requests</h1>
         <div className="flex gap-2">
-          <Button
-            variant="flat"
-            startContent={<Icon icon="lucide:filter" width={18} />}
-          >
+          <Button variant="flat" startContent={<Icon icon="lucide:filter" width={18} />}>
             Filter
           </Button>
-          <Button
-            variant="flat"
-            startContent={<Icon icon="lucide:download" width={18} />}
-          >
+          <Button variant="flat" startContent={<Icon icon="lucide:download" width={18} />}>
             Export
           </Button>
         </div>
@@ -143,10 +134,6 @@ const Returns: React.FC = () => {
               />
             </div>
           }
-          onRowAction={(key) => {
-            const returnItem = returns.find(r => r.id.toString() === key);
-            if (returnItem) handleReturnClick(returnItem);
-          }}
         >
           <TableHeader>
             <TableColumn>RETURN ID</TableColumn>
@@ -158,26 +145,36 @@ const Returns: React.FC = () => {
             <TableColumn>STATUS</TableColumn>
             <TableColumn>ACTIONS</TableColumn>
           </TableHeader>
-          <TableBody
-            isLoading={loading}
-            loadingContent={<Spinner color="primary" />}
-            emptyContent={error || "No returns found"}
-          >
+          <TableBody isLoading={loading} loadingContent={<Spinner color="primary" />} emptyContent={error || "No returns found"}>
             {returns.map((returnItem) => (
               <TableRow key={returnItem.id}>
-                <TableCell>
-                  <div className="font-medium">{returnItem.id}</div>
-                </TableCell>
+                <TableCell><div className="font-medium">{returnItem.id}</div></TableCell>
                 <TableCell>{returnItem.order_id}</TableCell>
                 <TableCell>{returnItem.product_id}</TableCell>
                 <TableCell>{formatDate(returnItem.request_date)}</TableCell>
                 <TableCell>{truncateText(returnItem.reason, 30)}</TableCell>
                 <TableCell>{returnItem.quantity}</TableCell>
-                <TableCell>
-                  <StatusBadge status={returnItem.status} />
-                </TableCell>
+                <TableCell><StatusBadge status={returnItem.status} /></TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="flat"
+                      color="success"
+                      isDisabled={returnItem.status !== 'pending'}
+                      onPress={() => handleReturnClick({ ...returnItem, action: 'approve' })}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="flat"
+                      color="danger"
+                      isDisabled={returnItem.status !== 'pending'}
+                      onPress={() => handleReturnClick({ ...returnItem, action: 'reject' })}
+                    >
+                      Reject
+                    </Button>
                     <Button
                       size="sm"
                       variant="flat"
@@ -193,7 +190,6 @@ const Returns: React.FC = () => {
         </Table>
       </div>
 
-      {/* Return Detail Modal */}
       <ReturnDetailModal
         isOpen={isOpen}
         onClose={onClose}
