@@ -8,9 +8,9 @@ import Dashboard from "./pages/dashboard";
 import Products from "./pages/products";
 import Orders from "./pages/orders";
 import Shipping from "./pages/shipping";
+import Returns from "./pages/returns";
 // import Orders from "./pages/orders";
 // import Shipping from "./pages/shipping";
-// import Returns from "./pages/returns";
 // import NotFound from "./pages/not-found";
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -75,14 +75,14 @@ function App() {
       />
 
       {/* Halaman Returns */}
-      {/* <Route
+      <Route
         element={
           <PrivateRoute>
             <Returns />
           </PrivateRoute>
         }
         path="/admin/returns"
-      /> */}
+      />
 
       {/* Redirect root ke dashboard */}
       <Route element={<Navigate replace to="/admin/products" />} path="/" />

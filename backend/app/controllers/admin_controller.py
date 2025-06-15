@@ -292,9 +292,46 @@ def return_management():
         return jsonify({'message': 'Unauthorized'}), 403
     
     if request.method == 'GET':
-        status = request.args.get('status', 'pending')
-        returns = ReturnRequest.query.filter_by(status=status).all()
-        return jsonify([r.to_dict() for r in returns])
+        # Get pagination parameters with defaults
+        page = request.args.get('page', default=1, type=int)
+        limit = request.args.get('limit', default=10, type=int)
+        status = request.args.get('status', default=None)
+        search = request.args.get('search', default=None)
+        
+        # Base query
+        query = ReturnRequest.query
+        
+        # Apply filters if provided
+        if status:
+            query = query.filter_by(status=status)
+            
+        if search:
+            query = query.join(Product).filter(
+                or_(
+                    ReturnRequest.id.ilike(f'%{search}%'),
+                    ReturnRequest.order_id.ilike(f'%{search}%'),
+                    Product.name.ilike(f'%{search}%'),
+                    ReturnRequest.reason.ilike(f'%{search}%')
+                )
+            )
+        
+        # Apply pagination
+        paginated_returns = query.paginate(
+            page=page,
+            per_page=limit,
+            error_out=False
+        )
+        
+        # Prepare response
+        returns_data = [r.to_dict() for r in paginated_returns.items]
+        
+        return jsonify({
+            'returns': returns_data,
+            'total': paginated_returns.total,
+            'page': page,
+            'limit': limit,
+            'total_pages': paginated_returns.pages
+        })
     
     elif request.method == 'PUT':
         data = request.get_json()
