@@ -4,6 +4,12 @@ class TokenResponse {
   TokenResponse({required this.token});
 
   factory TokenResponse.fromJson(Map<String, dynamic> json) {
-    return TokenResponse(token: json['token']);
+    if (json['access_token'] == null) {
+      throw Exception('Access token not found in response');
+    }
+
+    return TokenResponse(
+      token: json['access_token'],
+    );
   }
 }

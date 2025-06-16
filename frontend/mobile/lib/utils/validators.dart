@@ -38,4 +38,21 @@ class Validators {
     }
     return null;
   }
+
+  static String? validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Phone is required';
+    }
+    if (!RegExp(r'^\+?\d{9,15}$').hasMatch(value)) {
+      return 'Enter a valid phone number';
+    }
+    return null;
+  }
+
+  static String? validateAddress(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Address is required';
+    }
+    return null;
+  }
 }

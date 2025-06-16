@@ -25,15 +25,33 @@ def reseller_login():
     return jsonify({"msg": "Reseller registered"}), 201
 
 def reseller_register():
-    # Implementation for reseller registration
     data = request.get_json()
-    reseller = Reseller.query.filter_by(email=data.get('email')).first()
+
+    # Validasi input
+    if not all(k in data for k in ("username", "password", "name", "email", "phone", "address")):
+        return jsonify({"msg": "Missing required fields"}), 400
+
+    if Reseller.query.filter_by(email=data["email"]).first():
+        return jsonify({"msg": "Email already registered"}), 409
     
-    if reseller and reseller.check_password(data.get('password')):
-        access_token = create_access_token(identity={'id': reseller.id, 'role': 'reseller'})
-        return jsonify(access_token=access_token), 200
-    
-    return jsonify({"msg": "Bad email or password"}), 401
+    if Reseller.query.filter_by(username=data["username"]).first():
+        return jsonify({"msg": "Username already taken"}), 409
+
+    # Buat user baru
+    reseller = Reseller(
+        username=data["username"],
+        name=data["name"],
+        email=data["email"],
+        phone=data["phone"],
+        address=data["address"],
+    )
+    reseller.set_password(data["password"])
+    db.session.add(reseller)
+    db.session.commit()
+
+    # Generate token
+    token = reseller.generate_auth_token()
+    return jsonify(access_token=token), 201
 
 
 @jwt_required()

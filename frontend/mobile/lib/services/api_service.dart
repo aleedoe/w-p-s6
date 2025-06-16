@@ -12,7 +12,7 @@ class ApiService {
 
   ApiService(this.ref) {
     _dio = Dio(BaseOptions(
-      baseUrl: 'http://your-flask-backend.com', // Replace with your backend URL
+      baseUrl: 'http://127.0.0.1:5000', // Replace with your backend URL
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
     ));

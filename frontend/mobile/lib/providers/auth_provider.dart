@@ -27,11 +27,25 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  Future<void> register(String email, String password, String name) async {
+  Future<void> register({
+    required String username,
+    required String email,
+    required String password,
+    required String name,
+    required String phone,
+    required String address,
+  }) async {
     state = const AsyncValue.loading();
     try {
       final response = await ref.read(authServiceProvider).register(
-            RegisterRequest(email: email, password: password, name: name),
+            RegisterRequest(
+              username: username,
+              email: email,
+              password: password,
+              name: name,
+              phone: phone,
+              address: address,
+            ),
           );
       await SecureStorage.saveToken(response.token);
       state = const AsyncValue.data(null);
