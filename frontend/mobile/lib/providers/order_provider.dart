@@ -1,12 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/order/order.dart';
-import '../services/order_service.dart';
+import '../services/api_service.dart';
 
-final ordersProvider = FutureProvider<List<Order>>((ref) async {
-  return ref.read(orderServiceProvider).getOrders();
-});
+final ordersProvider =
+    AsyncNotifierProvider<OrderNotifier, List<dynamic>>(OrderNotifier.new);
 
-final orderProvider =
-    FutureProvider.family<Order, String>((ref, orderId) async {
-  return ref.read(orderServiceProvider).getOrder(orderId);
-});
+class OrderNotifier extends AsyncNotifier<List<dynamic>> {
+  @override
+  Future<List<dynamic>> build() async {
+    return await _fetchOrders();
+  }
+
+  Future<List<dynamic>> _fetchOrders() async {
+    final response = await ref.read(apiServiceProvider).get('/orders');
+    return response.data;
+  }
+
+  Future<void> refreshOrders() async {
+    state = const AsyncLoading();
+    state = AsyncData(await _fetchOrders());
+  }
+}
