@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/views/orders/orders_list_screen.dart';
+import 'package:mobile/views/products/products_list_screen.dart';
+import 'package:mobile/views/returns/returns_list_screen.dart';
+import 'package:mobile/views/shipping/shipping_list_screen.dart';
+import 'package:mobile/views/stock/stock_list_screen.dart';
 
 class PlaceholderScreen extends StatelessWidget {
   final String title;
@@ -90,26 +95,31 @@ class DashboardList extends StatelessWidget {
         'icon': Icons.shopping_basket_rounded,
         'label': 'Products',
         'color': Colors.orange,
+        'screen': const ProductsListScreen(),
       },
       {
         'icon': Icons.receipt_long_rounded,
         'label': 'Orders',
         'color': Colors.blue,
+        'screen': const OrdersListScreen(),
       },
       {
         'icon': Icons.assignment_return_rounded,
         'label': 'Returns',
         'color': Colors.green,
+        'screen': const ReturnsListScreen(),
       },
       {
         'icon': Icons.inventory_2_rounded,
         'label': 'Stock',
         'color': Colors.purple,
+        'screen': const StockListScreen(),
       },
       {
         'icon': Icons.local_shipping_rounded,
         'label': 'Shipping',
         'color': Colors.red,
+        'screen': const ShippingListScreen(),
       },
     ];
 
@@ -140,9 +150,7 @@ class DashboardList extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      PlaceholderScreen(title: item['label'] as String),
-                ),
+                    builder: (context) => item['screen'] as Widget),
               );
             },
           ),
