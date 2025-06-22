@@ -1,14 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mobile/models/product.dart';
-import 'package:mobile/services/product_service.dart';
+// import 'package:mobile/models/product.dart';
+import 'package:mobile/providers/product_provider.dart'; // GANTI INI
 
-class ProductsListScreen extends ConsumerWidget {
+class ProductsListScreen extends ConsumerStatefulWidget {
   const ProductsListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final productFuture = ref.watch(_productsProvider);
+  ConsumerState<ProductsListScreen> createState() => _ProductsListScreenState();
+}
+
+class _ProductsListScreenState extends ConsumerState<ProductsListScreen> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Trigger refresh tiap kali halaman ini diakses
+    Future.microtask(() {
+      ref.read(productsProvider.notifier).refreshProducts();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final productAsync = ref.watch(productsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -21,7 +35,7 @@ class ProductsListScreen extends ConsumerWidget {
         elevation: 0.5,
       ),
       backgroundColor: Colors.grey[100],
-      body: productFuture.when(
+      body: productAsync.when(
         data: (products) {
           return ListView.separated(
             padding: const EdgeInsets.all(16),
@@ -31,19 +45,17 @@ class ProductsListScreen extends ConsumerWidget {
               final item = products[index];
               final product = item.product;
               return Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
                 elevation: 0.5,
                 color: Colors.white,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: InkWell(
-                    onTap: () {
-                      // Bisa diarahkan ke detail screen nanti
-                    },
+                    onTap: () {},
                     borderRadius: BorderRadius.circular(12),
                     child: Row(
                       children: [
-                        // Image
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: Image.network(
@@ -51,16 +63,14 @@ class ProductsListScreen extends ConsumerWidget {
                             width: 60,
                             height: 60,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+                            errorBuilder: (_, __, ___) =>
+                                const Icon(Icons.broken_image),
                           ),
                         ),
                         const SizedBox(width: 16),
-                        
-                        // Product info (name & brand)
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
                                 product.name,
@@ -84,11 +94,8 @@ class ProductsListScreen extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        
-                        // Price and stock
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
-                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               "Rp ${product.price.toStringAsFixed(0)}",
@@ -122,9 +129,3 @@ class ProductsListScreen extends ConsumerWidget {
     );
   }
 }
-
-// Provider future untuk mengambil produk
-final _productsProvider = FutureProvider<List<ProductWithStock>>((ref) async {
-  final service = ref.read(productServiceProvider);
-  return await service.getProducts();
-});
