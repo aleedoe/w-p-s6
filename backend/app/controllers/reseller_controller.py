@@ -63,20 +63,21 @@ def product_listing():
 
 @jwt_required()
 def order_operations(order_id=None):
-    current_user = get_jwt_identity()
-    if current_user['role'] != 'reseller':
+    # current_user = get_jwt_identity()
+    claims = get_jwt()
+    if claims.get('role') != 'reseller':
         return jsonify({'message': 'Unauthorized'}), 403
     
     if request.method == 'GET':
         if order_id:
-            order = OrderRequest.query.filter_by(id=order_id, reseller_id=current_user['id']).first_or_404()
+            order = OrderRequest.query.filter_by(id=order_id, reseller_id=claims.get('sub')).first_or_404()
             details = OrderDetail.query.filter_by(order_id=order_id).all()
             return jsonify({
                 'order': order.to_dict(),
                 'details': [d.to_dict() for d in details]
             })
         else:
-            orders = OrderRequest.query.filter_by(reseller_id=current_user['id']).all()
+            orders = OrderRequest.query.filter_by(reseller_id=claims.get('sub')).all()
             return jsonify([o.to_dict() for o in orders])
     
     elif request.method == 'POST':
@@ -111,7 +112,7 @@ def order_operations(order_id=None):
         
         # Create order
         order = OrderRequest(
-            reseller_id=current_user['id'],
+            reseller_id=claims.get('sub'),
             total_amount=total_amount,
             notes=data.get('notes')
         )

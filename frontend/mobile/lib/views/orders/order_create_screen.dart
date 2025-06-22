@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import '../../models/order/order_request.dart';
-// import '../../models/product.dart';
-import '../../providers/product_provider.dart';
+import 'package:mobile/providers/product_provider.dart';
 
 class OrderCreateScreen extends ConsumerStatefulWidget {
   const OrderCreateScreen({super.key});
@@ -16,7 +14,7 @@ class _OrderCreateScreenState extends ConsumerState<OrderCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final productsAsync = ref.watch(productsProvider);
+    final productsAsync = ref.watch(productsProvider); // List<ProductWithStock>
 
     return Scaffold(
       appBar: AppBar(
@@ -27,7 +25,8 @@ class _OrderCreateScreenState extends ConsumerState<OrderCreateScreen> {
             onPressed: _selectedProducts.isEmpty
                 ? null
                 : () {
-                    // Implement order submission
+                    // ignore: avoid_print
+                    print('Order submitted: $_selectedProducts');
                   },
           ),
         ],
@@ -35,17 +34,31 @@ class _OrderCreateScreenState extends ConsumerState<OrderCreateScreen> {
       body: productsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text('Error: $error')),
-        data: (products) => ListView.builder(
-          itemCount: products.length,
+        data: (productsWithStock) => ListView.builder(
+          itemCount: productsWithStock.length,
           itemBuilder: (context, index) {
-            final product = products[index];
-            final quantity = _selectedProducts[product.id] ?? 0;
+            final product = productsWithStock[index].product;
+            final quantity = _selectedProducts[product.id.toString()] ?? 0;
 
             return Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              elevation: 0.5,
               child: ListTile(
-                leading: Image.network(product.imageUrl),
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    'http://127.0.0.1:5000/${product.imageUrl}',
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+                  ),
+                ),
                 title: Text(product.name),
-                subtitle: Text('\$${product.price.toStringAsFixed(2)}'),
+                subtitle: Text(
+                  'Rp ${product.price.toStringAsFixed(0)}',
+                  style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w500),
+                ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -55,9 +68,9 @@ class _OrderCreateScreenState extends ConsumerState<OrderCreateScreen> {
                           ? () {
                               setState(() {
                                 if (quantity == 1) {
-                                  _selectedProducts.remove(product.id);
+                                  _selectedProducts.remove(product.id.toString());
                                 } else {
-                                  _selectedProducts[product.id] = quantity - 1;
+                                  _selectedProducts[product.id.toString()] = quantity - 1;
                                 }
                               });
                             }
@@ -68,7 +81,7 @@ class _OrderCreateScreenState extends ConsumerState<OrderCreateScreen> {
                       icon: const Icon(Icons.add),
                       onPressed: () {
                         setState(() {
-                          _selectedProducts[product.id] = quantity + 1;
+                          _selectedProducts[product.id.toString()] = quantity + 1;
                         });
                       },
                     ),

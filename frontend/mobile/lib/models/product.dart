@@ -1,34 +1,48 @@
 class Product {
-  final String id;
+  final int id;
   final String name;
-  final String description;
-  final double price;
-  final String imageUrl;
-  final String category;
   final String brand;
+  final String category;
   final String model;
+  final String description;
+  final String imageUrl;
+  final double price;
 
   Product({
     required this.id,
     required this.name,
-    required this.description,
-    required this.price,
-    required this.imageUrl,
-    required this.category,
     required this.brand,
+    required this.category,
     required this.model,
+    required this.description,
+    required this.imageUrl,
+    required this.price,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
       id: json['id'],
       name: json['name'],
-      description: json['description'],
-      price: json['price'].toDouble(),
-      imageUrl: json['image_url'],
-      category: json['category'],
       brand: json['brand'],
+      category: json['category'],
       model: json['model'],
+      description: json['description'],
+      imageUrl: json['image_url'],
+      price: json['price'].toDouble(),
+    );
+  }
+}
+
+class ProductWithStock {
+  final Product product;
+  final int stock;
+
+  ProductWithStock({required this.product, required this.stock});
+
+  factory ProductWithStock.fromJson(Map<String, dynamic> json) {
+    return ProductWithStock(
+      product: Product.fromJson(json['product']),
+      stock: json['stock'],
     );
   }
 }
