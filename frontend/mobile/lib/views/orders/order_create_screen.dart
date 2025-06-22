@@ -14,6 +14,15 @@ class _OrderCreateScreenState extends ConsumerState<OrderCreateScreen> {
   final Map<String, int> _selectedProducts = {};
   final TextEditingController _notesController = TextEditingController();
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh produk saat halaman muncul
+    Future.microtask(() {
+      ref.read(productsProvider.notifier).refreshProducts();
+    });
+  }
+
   void _submitOrder() async {
     final products = _selectedProducts.entries
         .map((e) => {
@@ -31,13 +40,12 @@ class _OrderCreateScreenState extends ConsumerState<OrderCreateScreen> {
       });
 
       if (response.statusCode == 201 && mounted) {
-        Navigator.pop(context, true); // ✅ kirim true untuk trigger refresh
+        Navigator.pop(context, true); // Trigger refresh dari list order
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Pesanan berhasil dibuat')),
         );
       }
     } catch (e) {
-      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal membuat pesanan: $e')),
       );
