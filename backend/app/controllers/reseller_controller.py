@@ -1,5 +1,5 @@
 from flask import request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
+from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token, get_jwt
 from ..models import Reseller, Product, Stock, OrderRequest, OrderDetail, ReturnRequest, ShippingInfo, ResellerStock, db
 from .. import socketio
 from datetime import datetime
@@ -49,10 +49,12 @@ def reseller_register():
 
 @jwt_required()
 def product_listing():
-    current_user = get_jwt_identity()
-    if current_user['role'] != 'reseller':
+    current_user_id = get_jwt_identity()
+    claims = get_jwt()
+
+    if claims.get('role') != 'reseller':
         return jsonify({'message': 'Unauthorized'}), 403
-    
+
     products = Product.query.join(Stock).filter(Stock.quantity > 0).all()
     return jsonify([{
         'product': p.to_dict(),
