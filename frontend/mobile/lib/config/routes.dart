@@ -33,7 +33,7 @@ class RouteGenerator {
       case '/order/detail':
         return MaterialPageRoute(
           builder: (_) =>
-              OrderDetailScreen(orderId: settings.arguments as String),
+              OrderDetailScreen(orderId: settings.arguments as int),
         );
       case '/returns':
         return MaterialPageRoute(builder: (_) => const ReturnsListScreen());
