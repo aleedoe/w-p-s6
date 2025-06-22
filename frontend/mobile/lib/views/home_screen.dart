@@ -1,66 +1,153 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class HomeScreen extends ConsumerWidget {
-  const HomeScreen({super.key});
+class PlaceholderScreen extends StatelessWidget {
+  final String title;
+  const PlaceholderScreen({super.key, required this.title});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Reseller Dashboard')),
-      body: GridView.count(
-        crossAxisCount: 2,
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildFeatureCard(
-            context,
-            Icons.shopping_basket,
-            'Products',
-            () => Navigator.pushNamed(context, '/products'),
+      appBar: AppBar(title: Text(title)),
+      body: Center(child: Text('Halaman untuk $title')),
+    );
+  }
+}
+
+class ModernDashboardScreen extends StatefulWidget {
+  const ModernDashboardScreen({super.key});
+
+  @override
+  State<ModernDashboardScreen> createState() => _ModernDashboardScreenState();
+}
+
+class _ModernDashboardScreenState extends State<ModernDashboardScreen> {
+  int _selectedIndex = 0;
+
+  static const List<Widget> _widgetOptions = <Widget>[
+    DashboardList(), // Ganti dari grid ke list
+    PlaceholderScreen(title: 'Laporan'),
+    PlaceholderScreen(title: 'Profil'),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text(
+          'Home',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+            fontSize: 28,
           ),
-          _buildFeatureCard(
-            context,
-            Icons.receipt,
-            'Orders',
-            () => Navigator.pushNamed(context, '/orders'),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.white,
+      ),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _widgetOptions,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        selectedItemColor: Colors.blue[700],
+        unselectedItemColor: Colors.grey[600],
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard_rounded),
+            label: 'Beranda',
           ),
-          _buildFeatureCard(
-            context,
-            Icons.assignment_return,
-            'Returns',
-            () => Navigator.pushNamed(context, '/returns'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.analytics_rounded),
+            label: 'Laporan',
           ),
-          _buildFeatureCard(
-            context,
-            Icons.inventory,
-            'Stock',
-            () => Navigator.pushNamed(context, '/stock'),
-          ),
-          _buildFeatureCard(
-            context,
-            Icons.local_shipping,
-            'Shipping',
-            () => Navigator.pushNamed(context, '/shipping'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_rounded),
+            label: 'Profil',
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildFeatureCard(
-      BuildContext context, IconData icon, String label, VoidCallback onTap) {
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 48),
-            const SizedBox(height: 8),
-            Text(label, style: Theme.of(context).textTheme.titleLarge),
-          ],
-        ),
-      ),
+class DashboardList extends StatelessWidget {
+  const DashboardList({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final features = [
+      {
+        'icon': Icons.shopping_basket_rounded,
+        'label': 'Products',
+        'color': Colors.orange,
+      },
+      {
+        'icon': Icons.receipt_long_rounded,
+        'label': 'Orders',
+        'color': Colors.blue,
+      },
+      {
+        'icon': Icons.assignment_return_rounded,
+        'label': 'Returns',
+        'color': Colors.green,
+      },
+      {
+        'icon': Icons.inventory_2_rounded,
+        'label': 'Stock',
+        'color': Colors.purple,
+      },
+      {
+        'icon': Icons.local_shipping_rounded,
+        'label': 'Shipping',
+        'color': Colors.red,
+      },
+    ];
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: features.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final item = features[index];
+        return Card(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 0.5,
+          child: ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            leading: CircleAvatar(
+              backgroundColor: (item['color'] as Color).withOpacity(0.1),
+              child:
+                  Icon(item['icon'] as IconData, color: item['color'] as Color),
+            ),
+            title: Text(
+              item['label'] as String,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      PlaceholderScreen(title: item['label'] as String),
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

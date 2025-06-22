@@ -23,7 +23,7 @@ class RouteGenerator {
       case '/register':
         return MaterialPageRoute(builder: (_) => const RegisterScreen());
       case '/home':
-        return MaterialPageRoute(builder: (_) => const HomeScreen());
+        return MaterialPageRoute(builder: (_) => const ModernDashboardScreen());
       case '/products':
         return MaterialPageRoute(builder: (_) => const ProductsListScreen());
       case '/orders':

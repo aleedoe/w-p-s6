@@ -5,24 +5,17 @@ from .. import socketio
 from datetime import datetime
 
 def reseller_login():
-    # Implementation for reseller login
     data = request.get_json()
+    reseller = Reseller.query.filter_by(email=data.get('email')).first()
     
-    if Reseller.query.filter_by(email=data.get('email')).first():
-        return jsonify({"msg": "Email already registered"}), 400
-    
-    reseller = Reseller(
-        name=data['name'],
-        email=data['email'],
-        phone=data['phone'],
-        address=data['address']
-    )
-    reseller.set_password(data['password'])
-    
-    db.session.add(reseller)
-    db.session.commit()
-    
-    return jsonify({"msg": "Reseller registered"}), 201
+    if reseller and reseller.check_password(data.get('password')):
+        access_token = create_access_token(
+            identity=str(reseller.id),
+            additional_claims={'role': "reseller"}  # Optional: bisa disesuaikan
+        )
+        return jsonify(access_token=access_token), 200
+
+    return jsonify({"msg": "Bad email or password"}), 401
 
 def reseller_register():
     data = request.get_json()

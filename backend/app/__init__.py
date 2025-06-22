@@ -13,7 +13,10 @@ migrate = Migrate()
 jwt = JWTManager()
 socketio = SocketIO(cors_allowed_origins=[
     "http://localhost:5173", 
-    "http://127.0.0.1:5173"],
+    "http://127.0.0.1:5173",
+    "http://localhost:56136",
+    "http://127.0.0.1:56136",
+    ],
     engineio_logger=True,  # Untuk debugging
     logger=True
     )
@@ -26,7 +29,7 @@ def create_app(config_name='development'):
     # Enable CORS
     CORS(app, resources={
         r"/api/*": {
-            "origins": ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:49987", "http://127.0.0.1:49987"],
+            "origins": ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:63660", "http://127.0.0.1:63660"],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"]
         }
