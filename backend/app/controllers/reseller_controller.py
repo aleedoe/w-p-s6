@@ -148,15 +148,65 @@ def order_operations(order_id=None):
         return jsonify(order.to_dict()), 201
 
 @jwt_required()
-def return_operations():
-    # current_user = get_jwt_identity()
+def return_operations(return_id=None):
     claims = get_jwt()
     if claims.get('role') != 'reseller':
         return jsonify({'message': 'Unauthorized'}), 403
     
     if request.method == 'GET':
-        returns = ReturnRequest.query.filter_by(reseller_id=claims.get("sub")).all()
-        return jsonify([r.to_dict() for r in returns])
+        # Jika endpoint adalah /returns/returnable-orders
+        if request.endpoint == 'reseller.return_operations' and 'returnable-orders' in request.path:
+            # Get delivered orders for this reseller
+            delivered_orders = OrderRequest.query.filter_by(
+                reseller_id=claims.get("sub"),
+                status='delivered'
+            ).all()
+            
+            returnable_orders = []
+            for order in delivered_orders:
+                order_data = {
+                    'id': order.id,
+                    'order_date': order.order_date.isoformat(),
+                    'status': order.status,
+                    'order_details': []
+                }
+                
+                # Get order details with reseller stock info
+                for detail in order.order_details:
+                    # Get current reseller stock for this product
+                    reseller_stock = ResellerStock.query.filter_by(
+                        reseller_id=claims.get("sub"),
+                        product_id=detail.product_id
+                    ).first()
+                    
+                    # Get product info
+                    product = Product.query.get(detail.product_id)
+                    
+                    # Only include products that have stock available for return
+                    if reseller_stock and reseller_stock.quantity > 0:
+                        order_data['order_details'].append({
+                            'product_id': detail.product_id,
+                            'product_name': product.name if product else f'Product {detail.product_id}',
+                            'quantity': detail.quantity,
+                            'available_quantity': reseller_stock.quantity
+                        })
+                
+                # Only include orders that have returnable products
+                if order_data['order_details']:
+                    returnable_orders.append(order_data)
+            
+            return jsonify(returnable_orders)
+        
+        # Original get returns functionality
+        if return_id:
+            return_req = ReturnRequest.query.filter_by(
+                id=return_id,
+                reseller_id=claims.get("sub")
+            ).first_or_404()
+            return jsonify(return_req.to_dict())
+        else:
+            returns = ReturnRequest.query.filter_by(reseller_id=claims.get("sub")).all()
+            return jsonify([r.to_dict() for r in returns])
     
     elif request.method == 'POST':
         data = request.get_json()

@@ -18,6 +18,13 @@ class ReturnService {
         .toList();
   }
 
+  // Tambahkan method ini
+  Future<List<OrderOption>> getReturnableOrders() async {
+    final response =
+        await ref.read(apiServiceProvider).get('/returns/returnable-orders');
+    return (response.data as List).map((e) => OrderOption.fromJson(e)).toList();
+  }
+
   Future<ReturnRequest> createReturnRequest(ReturnRequestCreate request) async {
     final response =
         await ref.read(apiServiceProvider).post('/returns', request.toJson());

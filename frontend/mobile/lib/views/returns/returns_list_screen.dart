@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/models/return_request.dart';
 import 'package:mobile/providers/return_provider.dart';
+import 'package:mobile/views/returns/return_create_screen.dart';
 
 class ReturnsListScreen extends ConsumerStatefulWidget {
-  const ReturnsListScreen({Key? key}) : super(key: key);
+  const ReturnsListScreen({super.key});
 
   @override
   ConsumerState<ReturnsListScreen> createState() => _ReturnsListScreenState();
@@ -64,6 +65,7 @@ class _ReturnsListScreenState extends ConsumerState<ReturnsListScreen>
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Refresh',
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Column(
@@ -128,7 +130,6 @@ class _ReturnsListScreenState extends ConsumerState<ReturnsListScreen>
                 
                 return RefreshIndicator(
                   onRefresh: () async {
-                    // ignore: unused_result
                     ref.refresh(returnsProvider);
                   },
                   child: ListView.builder(
@@ -146,7 +147,38 @@ class _ReturnsListScreenState extends ConsumerState<ReturnsListScreen>
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _navigateToCreateReturn(),
+        backgroundColor: const Color(0xFF3B82F6),
+        foregroundColor: Colors.white,
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        icon: const Icon(Icons.add_rounded, size: 24),
+        label: const Text(
+          'Buat Return',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
     );
+  }
+
+  Future<void> _navigateToCreateReturn() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ReturnCreateScreen(),
+      ),
+    );
+    
+    // If return was created successfully, refresh the list
+    if (result == true) {
+      ref.refresh(returnsProvider);
+    }
   }
 
   Widget _buildReturnCard(ReturnRequest returnRequest) {
@@ -431,6 +463,20 @@ class _ReturnsListScreenState extends ConsumerState<ReturnsListScreen>
             style: TextStyle(
               fontSize: 14,
               color: Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () => _navigateToCreateReturn(),
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Buat Return Pertama'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3B82F6),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           ),
         ],

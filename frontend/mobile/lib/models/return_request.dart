@@ -120,3 +120,51 @@ class ReturnRequestCreate {
     };
   }
 }
+
+class OrderOption {
+  final int orderId;
+  final DateTime orderDate;
+  final String status;
+  final List<ProductOption> products;
+
+  OrderOption({
+    required this.orderId,
+    required this.orderDate,
+    required this.status,
+    required this.products,
+  });
+
+  factory OrderOption.fromJson(Map<String, dynamic> json) {
+    return OrderOption(
+      orderId: json['id'],
+      orderDate: DateTime.parse(json['order_date']),
+      status: json['status'],
+      products: (json['order_details'] as List)
+          .map((e) => ProductOption.fromJson(e))
+          .toList(),
+    );
+  }
+}
+
+class ProductOption {
+  final int productId;
+  final String productName;
+  final int orderedQuantity;
+  final int availableQuantity; // dari reseller stock
+
+  ProductOption({
+    required this.productId,
+    required this.productName,
+    required this.orderedQuantity,
+    required this.availableQuantity,
+  });
+
+  factory ProductOption.fromJson(Map<String, dynamic> json) {
+    return ProductOption(
+      productId: json['product_id'],
+      productName: json['product_name'] ?? 'Product ${json['product_id']}',
+      orderedQuantity: json['quantity'],
+      availableQuantity: json['available_quantity'] ?? 0,
+    );
+  }
+}

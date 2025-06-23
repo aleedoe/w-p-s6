@@ -5,7 +5,7 @@ import 'package:mobile/models/return_request.dart';
 import 'package:mobile/services/return_service.dart';
 
 class ReturnCreateScreen extends ConsumerStatefulWidget {
-  const ReturnCreateScreen({Key? key}) : super(key: key);
+  const ReturnCreateScreen({super.key});
 
   @override
   ConsumerState<ReturnCreateScreen> createState() => _ReturnCreateScreenState();
@@ -13,14 +13,17 @@ class ReturnCreateScreen extends ConsumerStatefulWidget {
 
 class _ReturnCreateScreenState extends ConsumerState<ReturnCreateScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _orderIdController = TextEditingController();
-  final _productIdController = TextEditingController();
   final _quantityController = TextEditingController();
   final _reasonController = TextEditingController();
-  
+
   bool _isLoading = false;
-  
-  // Predefined reasons for quick selection
+  bool _isLoadingData = true;
+
+  // Data untuk dropdown
+  List<OrderOption> _availableOrders = [];
+  OrderOption? _selectedOrder;
+  ProductOption? _selectedProduct;
+
   final List<String> _predefinedReasons = [
     'Produk rusak/cacat',
     'Produk tidak sesuai deskripsi',
@@ -31,20 +34,55 @@ class _ReturnCreateScreenState extends ConsumerState<ReturnCreateScreen> {
     'Produk tidak laku di pasaran',
     'Lainnya...',
   ];
-  
+
   String? _selectedReason;
 
   @override
-  void dispose() {
-    _orderIdController.dispose();
-    _productIdController.dispose();
-    _quantityController.dispose();
-    _reasonController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _loadReturnableOrders();
+  }
+
+  Future<void> _loadReturnableOrders() async {
+    try {
+      setState(() {
+        _isLoadingData = true;
+      });
+
+      final orders =
+          await ref.read(returnServiceProvider).getReturnableOrders();
+
+      setState(() {
+        _availableOrders = orders;
+        _isLoadingData = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingData = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memuat data: ${e.toString()}'),
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _submitReturn() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedOrder == null || _selectedProduct == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pilih order dan produk terlebih dahulu'),
+          backgroundColor: Color(0xFFEF4444),
+        ),
+      );
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -52,16 +90,17 @@ class _ReturnCreateScreenState extends ConsumerState<ReturnCreateScreen> {
 
     try {
       final returnRequest = ReturnRequestCreate(
-        orderId: int.parse(_orderIdController.text),
-        productId: int.parse(_productIdController.text),
+        orderId: _selectedOrder!.orderId,
+        productId: _selectedProduct!.productId,
         quantity: int.parse(_quantityController.text),
-        reason: _selectedReason == 'Lainnya...' ? _reasonController.text : (_selectedReason ?? _reasonController.text),
+        reason: _selectedReason == 'Lainnya...'
+            ? _reasonController.text
+            : (_selectedReason ?? _reasonController.text),
       );
 
       await ref.read(returnServiceProvider).createReturnRequest(returnRequest);
 
       if (mounted) {
-        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Row(
@@ -73,11 +112,11 @@ class _ReturnCreateScreenState extends ConsumerState<ReturnCreateScreen> {
             ),
             backgroundColor: const Color(0xFF10B981),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         );
 
-        // Navigate back
         Navigator.of(context).pop(true);
       }
     } catch (e) {
@@ -95,7 +134,8 @@ class _ReturnCreateScreenState extends ConsumerState<ReturnCreateScreen> {
             ),
             backgroundColor: const Color(0xFFEF4444),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         );
       }
@@ -184,93 +224,217 @@ class _ReturnCreateScreenState extends ConsumerState<ReturnCreateScreen> {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Order Information Section
               _buildSectionTitle('Informasi Order'),
               const SizedBox(height: 12),
-              
-              Card(
-                elevation: 0,
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: const BorderSide(color: Color(0xFFE2E8F0)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      _buildTextField(
-                        controller: _orderIdController,
-                        label: 'Order ID',
-                        hint: 'Masukkan ID order',
-                        icon: Icons.receipt_long_rounded,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Order ID tidak boleh kosong';
-                          }
-                          if (int.tryParse(value) == null) {
-                            return 'Order ID harus berupa angka';
-                          }
-                          return null;
-                        },
+
+              if (_isLoadingData)
+                const Card(
+                  elevation: 0,
+                  color: Colors.white,
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                )
+              else if (_availableOrders.isEmpty)
+                Card(
+                  elevation: 0,
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  child: const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(
+                      child: Text(
+                        'Tidak ada order yang dapat di-return',
+                        style: TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 14,
+                        ),
                       ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      _buildTextField(
-                        controller: _productIdController,
-                        label: 'Product ID',
-                        hint: 'Masukkan ID produk',
-                        icon: Icons.inventory_2_rounded,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Product ID tidak boleh kosong';
-                          }
-                          if (int.tryParse(value) == null) {
-                            return 'Product ID harus berupa angka';
-                          }
-                          return null;
-                        },
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      _buildTextField(
-                        controller: _quantityController,
-                        label: 'Jumlah Return',
-                        hint: 'Masukkan jumlah produk',
-                        icon: Icons.numbers_rounded,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Jumlah tidak boleh kosong';
-                          }
-                          final quantity = int.tryParse(value);
-                          if (quantity == null || quantity <= 0) {
-                            return 'Jumlah harus lebih dari 0';
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
+                    ),
+                  ),
+                )
+              else
+                Card(
+                  elevation: 0,
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        // Order Dropdown
+                        DropdownButtonFormField<OrderOption>(
+                          value: _selectedOrder,
+                          decoration: InputDecoration(
+                            labelText: 'Pilih Order',
+                            prefixIcon: const Icon(Icons.receipt_long_rounded),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                  color: Color(0xFF3B82F6), width: 2),
+                            ),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                          ),
+                          items: _availableOrders.map((order) {
+                            return DropdownMenuItem<OrderOption>(
+                              value: order,
+                              child: Text(
+                                'Order #${order.orderId} - ${order.orderDate.day}/${order.orderDate.month}/${order.orderDate.year}',
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (OrderOption? value) {
+                            setState(() {
+                              _selectedOrder = value;
+                              _selectedProduct =
+                                  null; // Reset product selection
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Pilih order terlebih dahulu';
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Product Dropdown
+                        DropdownButtonFormField<ProductOption>(
+                          value: _selectedProduct,
+                          decoration: InputDecoration(
+                            labelText: 'Pilih Produk',
+                            prefixIcon: const Icon(Icons.inventory_2_rounded),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                  color: Color(0xFF3B82F6), width: 2),
+                            ),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                          ),
+                          items: _selectedOrder?.products.map((product) {
+                                return DropdownMenuItem<ProductOption>(
+                                  value: product,
+                                  child: Text(
+                                    '${product.productName} (Stok: ${product.availableQuantity})',
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                );
+                              }).toList() ??
+                              [],
+                          onChanged: _selectedOrder == null
+                              ? null
+                              : (ProductOption? value) {
+                                  setState(() {
+                                    _selectedProduct = value;
+                                    _quantityController.clear();
+                                  });
+                                },
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Pilih produk terlebih dahulu';
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Quantity Input
+                        TextFormField(
+                          controller: _quantityController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly
+                          ],
+                          decoration: InputDecoration(
+                            labelText: 'Jumlah Return',
+                            hintText: _selectedProduct != null
+                                ? 'Maksimal: ${_selectedProduct!.availableQuantity}'
+                                : 'Masukkan jumlah produk',
+                            prefixIcon: const Icon(Icons.numbers_rounded),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFE2E8F0)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                  color: Color(0xFF3B82F6), width: 2),
+                            ),
+                            filled: true,
+                            fillColor: const Color(0xFFF8FAFC),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Jumlah tidak boleh kosong';
+                            }
+                            final quantity = int.tryParse(value);
+                            if (quantity == null || quantity <= 0) {
+                              return 'Jumlah harus lebih dari 0';
+                            }
+                            if (_selectedProduct != null &&
+                                quantity >
+                                    _selectedProduct!.availableQuantity) {
+                              return 'Jumlah melebihi stok yang tersedia';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Reason Section
               _buildSectionTitle('Alasan Return'),
               const SizedBox(height: 12),
-              
+
               Card(
                 elevation: 0,
                 color: Colors.white,
@@ -292,7 +456,7 @@ class _ReturnCreateScreenState extends ConsumerState<ReturnCreateScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      
+
                       // Predefined reasons
                       Wrap(
                         spacing: 8,
@@ -314,12 +478,12 @@ class _ReturnCreateScreenState extends ConsumerState<ReturnCreateScreen> {
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: isSelected 
+                                color: isSelected
                                     ? const Color(0xFF3B82F6).withOpacity(0.1)
                                     : const Color(0xFFF8FAFC),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: isSelected 
+                                  color: isSelected
                                       ? const Color(0xFF3B82F6)
                                       : const Color(0xFFE2E8F0),
                                   width: 1.5,
@@ -330,7 +494,7 @@ class _ReturnCreateScreenState extends ConsumerState<ReturnCreateScreen> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
-                                  color: isSelected 
+                                  color: isSelected
                                       ? const Color(0xFF3B82F6)
                                       : const Color(0xFF64748B),
                                 ),
@@ -339,9 +503,10 @@ class _ReturnCreateScreenState extends ConsumerState<ReturnCreateScreen> {
                           );
                         }).toList(),
                       ),
-                      
+
                       // Custom reason input
-                      if (_selectedReason == 'Lainnya...' || _selectedReason == null) ...[
+                      if (_selectedReason == 'Lainnya...' ||
+                          _selectedReason == null) ...[
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _reasonController,
@@ -352,28 +517,34 @@ class _ReturnCreateScreenState extends ConsumerState<ReturnCreateScreen> {
                             prefixIcon: const Icon(Icons.edit_note_rounded),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFE2E8F0)),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFE2E8F0)),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+                              borderSide: const BorderSide(
+                                  color: Color(0xFF3B82F6), width: 2),
                             ),
                             errorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Color(0xFFEF4444)),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFEF4444)),
                             ),
                             filled: true,
                             fillColor: const Color(0xFFF8FAFC),
                           ),
                           validator: (value) {
-                            if (_selectedReason == null && (value == null || value.isEmpty)) {
+                            if (_selectedReason == null &&
+                                (value == null || value.isEmpty)) {
                               return 'Alasan return tidak boleh kosong';
                             }
-                            if (_selectedReason == 'Lainnya...' && (value == null || value.isEmpty)) {
+                            if (_selectedReason == 'Lainnya...' &&
+                                (value == null || value.isEmpty)) {
                               return 'Jelaskan alasan return dengan detail';
                             }
                             return null;
@@ -384,9 +555,9 @@ class _ReturnCreateScreenState extends ConsumerState<ReturnCreateScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Submit Button
               SizedBox(
                 width: double.infinity,
@@ -410,7 +581,8 @@ class _ReturnCreateScreenState extends ConsumerState<ReturnCreateScreen> {
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
                                 strokeWidth: 2,
                               ),
                             ),
@@ -440,7 +612,7 @@ class _ReturnCreateScreenState extends ConsumerState<ReturnCreateScreen> {
                         ),
                 ),
               ),
-              
+
               const SizedBox(height: 16),
             ],
           ),
