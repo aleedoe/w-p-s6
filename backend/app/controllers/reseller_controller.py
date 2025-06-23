@@ -149,12 +149,13 @@ def order_operations(order_id=None):
 
 @jwt_required()
 def return_operations():
-    current_user = get_jwt_identity()
-    if current_user['role'] != 'reseller':
+    # current_user = get_jwt_identity()
+    claims = get_jwt()
+    if claims.get('role') != 'reseller':
         return jsonify({'message': 'Unauthorized'}), 403
     
     if request.method == 'GET':
-        returns = ReturnRequest.query.filter_by(reseller_id=current_user['id']).all()
+        returns = ReturnRequest.query.filter_by(reseller_id=claims.get("sub")).all()
         return jsonify([r.to_dict() for r in returns])
     
     elif request.method == 'POST':
@@ -163,7 +164,7 @@ def return_operations():
         # Check if order exists and belongs to reseller
         order = OrderRequest.query.filter_by(
             id=data['order_id'],
-            reseller_id=current_user['id'],
+            reseller_id=claims.get("sub"),
             status='delivered'
         ).first_or_404()
         
@@ -175,7 +176,7 @@ def return_operations():
         
         # Check if reseller has enough stock
         reseller_stock = ResellerStock.query.filter_by(
-            reseller_id=current_user['id'],
+            reseller_id=claims.get("sub"),
             product_id=data['product_id']
         ).first()
         
@@ -184,7 +185,7 @@ def return_operations():
         
         # Create return request
         return_req = ReturnRequest(
-            reseller_id=current_user['id'],
+            reseller_id=claims.get("sub"),
             product_id=data['product_id'],
             order_id=data['order_id'],
             quantity=data['quantity'],
