@@ -1,88 +1,122 @@
 class ReturnRequest {
-  final String id;
-  final String orderId;
-  final DateTime requestDate;
-  final String status;
+  final int id;
+  final int resellerId;
+  final int productId;
+  final int orderId;
+  final int quantity;
   final String reason;
-  final List<ReturnItem> items;
+  final String status;
+  final DateTime? requestDate;
+  final DateTime? processedDate;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   ReturnRequest({
     required this.id,
+    required this.resellerId,
+    required this.productId,
     required this.orderId,
-    required this.requestDate,
-    required this.status,
+    required this.quantity,
     required this.reason,
-    required this.items,
+    required this.status,
+    this.requestDate,
+    this.processedDate,
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory ReturnRequest.fromJson(Map<String, dynamic> json) {
     return ReturnRequest(
-      id: json['id'],
-      orderId: json['order_id'],
-      requestDate: DateTime.parse(json['request_date']),
-      status: json['status'],
-      reason: json['reason'],
-      items:
-          (json['items'] as List).map((e) => ReturnItem.fromJson(e)).toList(),
+      id: json['id'] ?? 0,
+      resellerId: json['reseller_id'] ?? 0,
+      productId: json['product_id'] ?? 0,
+      orderId: json['order_id'] ?? 0,
+      quantity: json['quantity'] ?? 0,
+      reason: json['reason'] ?? '',
+      status: json['status'] ?? 'pending',
+      requestDate: json['request_date'] != null 
+          ? DateTime.tryParse(json['request_date']) 
+          : null,
+      processedDate: json['processed_date'] != null 
+          ? DateTime.tryParse(json['processed_date']) 
+          : null,
+      createdAt: json['created_at'] != null 
+          ? DateTime.tryParse(json['created_at']) 
+          : null,
+      updatedAt: json['updated_at'] != null 
+          ? DateTime.tryParse(json['updated_at']) 
+          : null,
     );
   }
-}
 
-class ReturnItem {
-  final String productId;
-  final String productName;
-  final int quantity;
-  final String reason;
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'reseller_id': resellerId,
+      'product_id': productId,
+      'order_id': orderId,
+      'quantity': quantity,
+      'reason': reason,
+      'status': status,
+      'request_date': requestDate?.toIso8601String(),
+      'processed_date': processedDate?.toIso8601String(),
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
+    };
+  }
 
-  ReturnItem({
-    required this.productId,
-    required this.productName,
-    required this.quantity,
-    required this.reason,
-  });
+  // Getter untuk status color
+  String get statusColor {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return '#FF9800'; // Orange
+      case 'approved':
+        return '#4CAF50'; // Green
+      case 'rejected':
+        return '#F44336'; // Red
+      case 'processed':
+        return '#2196F3'; // Blue
+      default:
+        return '#9E9E9E'; // Gray
+    }
+  }
 
-  factory ReturnItem.fromJson(Map<String, dynamic> json) {
-    return ReturnItem(
-      productId: json['product_id'],
-      productName: json['product_name'],
-      quantity: json['quantity'],
-      reason: json['reason'],
-    );
+  // Getter untuk status display text
+  String get statusDisplayText {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'Menunggu';
+      case 'approved':
+        return 'Disetujui';
+      case 'rejected':
+        return 'Ditolak';
+      case 'processed':
+        return 'Diproses';
+      default:
+        return status;
+    }
   }
 }
 
 class ReturnRequestCreate {
-  final String orderId;
-  final String reason;
-  final List<ReturnItemCreate> items;
-
-  ReturnRequestCreate({
-    required this.orderId,
-    required this.reason,
-    required this.items,
-  });
-
-  Map<String, dynamic> toJson() => {
-        'order_id': orderId,
-        'reason': reason,
-        'items': items.map((e) => e.toJson()).toList(),
-      };
-}
-
-class ReturnItemCreate {
-  final String productId;
+  final int productId;
+  final int orderId;
   final int quantity;
   final String reason;
 
-  ReturnItemCreate({
+  ReturnRequestCreate({
     required this.productId,
+    required this.orderId,
     required this.quantity,
     required this.reason,
   });
 
-  Map<String, dynamic> toJson() => {
-        'product_id': productId,
-        'quantity': quantity,
-        'reason': reason,
-      };
+  Map<String, dynamic> toJson() {
+    return {
+      'product_id': productId,
+      'order_id': orderId,
+      'quantity': quantity,
+      'reason': reason,
+    };
+  }
 }
