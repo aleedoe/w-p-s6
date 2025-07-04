@@ -248,11 +248,25 @@ def return_operations(return_id=None):
 
 @jwt_required()
 def stock_management():
-    current_user = get_jwt_identity()
-    if current_user['role'] != 'reseller':
+    # Get current user identity (usually user_id)
+    current_user_id = get_jwt_identity()
+    
+    # Get additional JWT claims
+    claims = get_jwt()
+    
+    # Check if user has reseller role
+    if claims.get('role') != 'reseller':
         return jsonify({'message': 'Unauthorized'}), 403
     
-    stocks = ResellerStock.query.filter_by(reseller_id=current_user['id']).all()
+    # Use current_user_id instead of claims.get("sub")
+    # "sub" is usually the same as get_jwt_identity()
+    reseller_id = current_user_id
+    print(reseller_id)
+    
+    # Query stocks for the reseller
+    stocks = ResellerStock.query.filter_by(reseller_id=reseller_id).all()
+    
+    # Return the stock data
     return jsonify([{
         'product': s.product.to_dict(),
         'quantity': s.quantity

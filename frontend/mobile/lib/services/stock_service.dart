@@ -12,9 +12,15 @@ class StockService {
   StockService(this.ref);
 
   Future<List<ResellerStock>> getStock() async {
-    final response = await ref.read(apiServiceProvider).get('/stock');
-    return (response.data as List)
-        .map((e) => ResellerStock.fromJson(e))
-        .toList();
+    try {
+      final response = await ref.read(apiServiceProvider).get('/stock');
+      
+      // Backend returns array of objects with 'product' and 'quantity' fields
+      return (response.data as List)
+          .map((e) => ResellerStock.fromJson(e))
+          .toList();
+    } catch (e) {
+      throw Exception('Failed to load stock: $e');
+    }
   }
 }

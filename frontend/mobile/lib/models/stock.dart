@@ -1,25 +1,25 @@
 class ResellerStock {
   final String productId;
   final String productName;
-  final int availableQuantity;
-  final int reservedQuantity;
+  final int quantity;
   final DateTime lastUpdated;
 
   ResellerStock({
     required this.productId,
     required this.productName,
-    required this.availableQuantity,
-    required this.reservedQuantity,
+    required this.quantity,
     required this.lastUpdated,
   });
 
   factory ResellerStock.fromJson(Map<String, dynamic> json) {
+    // Backend returns: {'product': {...}, 'quantity': int}
+    final product = json['product'] as Map<String, dynamic>;
+    
     return ResellerStock(
-      productId: json['product_id'],
-      productName: json['product_name'],
-      availableQuantity: json['available_quantity'],
-      reservedQuantity: json['reserved_quantity'],
-      lastUpdated: DateTime.parse(json['last_updated']),
+      productId: product['id']?.toString() ?? '',
+      productName: product['name'] ?? 'Unknown Product',
+      quantity: json['quantity'] ?? 0,
+      lastUpdated: DateTime.now(), // Backend doesn't return last_updated in this endpoint
     );
   }
 }

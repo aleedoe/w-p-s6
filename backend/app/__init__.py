@@ -14,8 +14,8 @@ jwt = JWTManager()
 socketio = SocketIO(cors_allowed_origins=[
     "http://localhost:5173", 
     "http://127.0.0.1:5173",
-    "http://localhost:56136",
-    "http://127.0.0.1:56136",
+    "http://localhost:58705",
+    "http://127.0.0.1:58705",
     ],
     engineio_logger=True,  # Untuk debugging
     logger=True
@@ -29,7 +29,7 @@ def create_app(config_name='development'):
     # Enable CORS
     CORS(app, resources={
         r"/api/*": {
-            "origins": ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:52722", "http://127.0.0.1:52722"],
+            "origins": ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:58705", "http://127.0.0.1:58705"],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"]
         }
